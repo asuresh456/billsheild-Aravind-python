@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#14263b" />
+  <title>BillShield — Understand your bill</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail">
+      <a class="brand" href="#" aria-label="BillShield home"><span class="brand-mark">✓</span><span>BillShield</span></a>
+      <div class="rail-label">WORKSPACE</div>
+      <button class="nav-item active" type="button"><span class="nav-icon">▤</span> New bill review</button>
+      <button class="nav-item" id="newReview" type="button"><span class="nav-icon">＋</span> Start over</button>
+      <div class="account-panel" id="accountPanel">
+        <div class="rail-label">OPTIONAL ACCOUNT</div>
+        <p class="account-copy" id="accountCopy">Review as a guest, or sign in to save your bill reviews privately.</p>
+        <button id="accountToggle" class="sign-out-button" type="button">Sign in or create account</button>
+        <form id="authForm" class="auth-form hidden">
+          <div class="auth-mode" role="group" aria-label="Choose account action">
+            <button id="signupMode" class="auth-mode-button active" type="button" aria-pressed="true">Sign up</button>
+            <button id="loginMode" class="auth-mode-button" type="button" aria-pressed="false">Sign in</button>
+          </div>
+          <label for="authName" id="authNameLabel">Your name</label>
+          <input id="authName" type="text" autocomplete="name" maxlength="100" placeholder="Name (optional)" />
+          <label for="authEmail">BillShield ID (email)</label>
+          <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required />
+          <label for="authPassword">Password</label>
+          <input id="authPassword" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required />
+          <button id="authButton" type="submit">Create account</button>
+        </form>
+        <p class="auth-help" id="authHelp">Use your email as your BillShield ID. No confirmation email is sent.</p>
+        <button id="signOutButton" class="sign-out-button hidden" type="button">Sign out</button>
+        <div id="conversationList" class="conversation-list hidden" aria-label="Saved conversations"></div>
+        <small class="account-privacy">Signed-in chat text and your stated terms are saved to your account. Bill files are sent to Gemini for review and are not saved here. Avoid full card or account numbers.</small>
+      </div>
+      <div class="rail-note"><span class="rail-note-icon">i</span><div><strong>Understand first</strong><p>A charge can be unfamiliar without being an error.</p></div></div>
+      <div class="rail-bottom"><span class="privacy-dot"></span><span>API key stays on the server</span></div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="breadcrumbs">BillShield <span>/</span> <strong>New review</strong></div>
+        <div class="top-status"><span class="status-dot"></span><span id="privacyStatus">Guest review · not saved</span></div>
+      </header>
+
+      <div class="page-wrap">
+        <section class="intro">
+          <div class="eyebrow">BILL REVIEW, WITH THE WORK SHOWN</div>
+          <h1>Understand the charge.<br><em>Decide what to do next.</em></h1>
+          <p>Upload a statement, tell us what you expected, then ask about any line. BillShield explains what it can verify and what needs the issuer’s answer.</p>
+        </section>
+
+        <div class="flow-strip" aria-label="How BillShield reviews a bill">
+          <div class="flow-step"><span>01</span><strong>Your bill</strong><small>Photo or PDF</small></div><i>→</i>
+          <div class="flow-step"><span>02</span><strong>Server review</strong><small>Key stays here</small></div><i>→</i>
+          <div class="flow-step"><span>03</span><strong>AI reads</strong><small>Lines and wording</small></div><i>→</i>
+          <div class="flow-step"><span>04</span><strong>Code checks</strong><small>Amounts and maths</small></div>
+        </div>
+
+        <div class="content-grid">
+          <section class="conversation-column">
+            <div class="section-heading"><div><span class="step-label">YOUR CONVERSATION</span><h2>Ask about your bill</h2></div><span class="conversation-state"><i></i> Ready when you are</span></div>
+            <div class="auth-required-banner" id="authRequiredBanner">Guest review is ready. Your conversation stays in this browser session and is not saved. Sign in to keep review history privately.</div>
+            <div class="chat-card" id="chatCard">
+              <div class="chat-messages" id="messages" aria-live="polite">
+                <div class="message assistant-message">
+                  <div class="message-avatar">B</div>
+                  <div class="bubble-wrap"><div class="message-meta">BILLSHIELD <span>·</span> BILL REVIEW</div>
+                    <div class="bubble">Add your bill and what you expected. I’ll help you follow the line items, explain unfamiliar wording, and check arithmetic. If the statement doesn’t contain enough evidence, I’ll say so.</div>
+                    <div class="suggestions"><button type="button" data-prompt="Can you explain a line on this bill?">Explain a line</button><button type="button" data-prompt="Can you check whether these totals add up?">Check the maths</button></div>
+                  </div>
+                </div>
+              </div>
+              <div class="composer-wrap">
+                <form id="chatForm" class="composer">
+                  <textarea id="question" rows="1" placeholder="Ask a follow-up about a bill line…" aria-label="Your question"></textarea>
+                  <button id="sendButton" class="send-button" type="submit" aria-label="Send message"><span>↑</span></button>
+                </form>
+                <div class="composer-foot"><span>Enter to send · Shift + Enter for a new line</span><span>Nothing is sent to the issuer for you</span></div>
+              </div>
+            </div>
+            <section class="line-card hidden" id="lineCard">
+              <div class="section-kicker">REVIEW RESULT <span>· FROM THIS CONVERSATION</span></div>
+              <div id="lineSummary" class="line-summary"></div>
+              <div class="line-actions"><button type="button" id="understoodButton">I understand this</button><button type="button" id="draftButton">Draft a question</button></div>
+            </section>
+            <p class="fine-print">BillShield explains bill information; it does not determine legal liability or submit disputes.</p>
+          </section>
+
+          <aside class="bill-column">
+            <section class="bill-card upload-card" id="uploadCard">
+              <div class="card-heading"><span class="step-number">01</span><div><span class="step-label">INPUT</span><h2>Add your bill</h2></div></div>
+              <p class="muted">Use a statement photo or PDF. You can remove it before starting over.</p>
+              <label class="dropzone" id="dropzone" for="billFile">
+                <input id="billFile" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" />
+                <span class="upload-icon">↑</span><strong>Choose a bill file</strong><span>or drop it here</span>
+                <small>PDF, JPG, PNG or WebP · up to 3 MB</small>
+              </label>
+              <div class="file-chip hidden" id="fileChip"><span class="file-type">PDF</span><span class="file-name" id="fileName"></span><button id="removeFile" type="button" aria-label="Remove file">×</button></div>
+              <div class="privacy-note"><span>◈</span><span><strong>File handling:</strong> sent to Gemini for this review and not saved by BillShield. Signed-in chat text stays private to your account.</span></div>
+            </section>
+
+            <section class="bill-card promise-card">
+              <div class="card-heading"><span class="step-number">02</span><div><span class="step-label">CONTEXT</span><h2>What did you expect?</h2></div></div>
+              <p class="muted">A promised price, reward rule, or fee detail helps put a bill line in context.</p>
+              <textarea id="promise" rows="3" placeholder="For example: I was told this plan costs ₹499 per month"></textarea>
+              <div class="promise-hint">Optional. Add a photo of the offer later if you have one.</div>
+            </section>
+
+            <section class="architecture-card">
+              <div class="section-heading compact"><div><span class="step-label">WHAT HAPPENS NEXT</span><h2>One interface, clear roles</h2></div></div>
+              <div class="role-row"><span class="role-icon server-icon">S</span><div><strong>Server</strong><small>Protects the API key and coordinates the review</small></div></div>
+              <div class="role-row"><span class="role-icon ai-icon">AI</span><div><strong>AI model</strong><small>Reads bill lines and explains wording</small></div></div>
+              <div class="role-row"><span class="role-icon code-icon">ƒ</span><div><strong>Code</strong><small>Checks calculations; AI does not decide the amounts</small></div></div>
+              <details class="calculator-card">
+                <summary>Open the manual tax calculator</summary>
+                <p class="muted">Optional arithmetic check. Enter values copied from the bill.</p>
+                <div class="calc-fields">
+                  <label>Charge before tax <span>₹</span><input id="baseAmount" inputmode="decimal" placeholder="e.g. 500.00" /></label>
+                  <label>Tax rate <span>%</span><input id="taxRate" inputmode="decimal" placeholder="e.g. 18" /></label>
+                </div>
+                <button class="calculate-button" id="calculateButton" type="button">Calculate tax</button>
+                <div class="calc-result hidden" id="calcResult" aria-live="polite"></div>
+              </details>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
